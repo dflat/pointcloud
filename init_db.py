@@ -6,7 +6,7 @@ import random, time
 HOST = 'localhost'
 DATABASE = 'test'
 USER = 'root'
-PASS = 'cool2'
+PASS = 'secret'
 
 db = peewee.MySQLDatabase(database=DATABASE, host=HOST, user=USER, passwd=PASS) 
 

@@ -9,6 +9,7 @@ source flask.env
 
 ###
 this will put app in debug mode
+
 edit db login credentials in *init_db.py*
 ###
 

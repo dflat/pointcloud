@@ -1,19 +1,17 @@
 ## execute in shell to set up virtual environment with dependencies ##
+```
 virtualenv --no-site-packages --distribute .env
-
 source .env/bin/activate 
-
 pip install -r requirements.txt
-
 source flask.env
+```
 
-###
-this will put app in debug mode
+-this will put app in debug mode
 
-edit db login credentials in *init_db.py*
-###
+-edit db login credentials in *init_db.py*
 
-## to run ###
+
+## to run ##
 flask run --host=0.0.0.0 --port=7000 
 
 ## directory map ##

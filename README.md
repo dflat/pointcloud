@@ -15,8 +15,8 @@ source flask.env
 flask run --host=0.0.0.0 --port=7000 
 
 ## directory map ##
-Pointcloud/
-    __init__.py         : contains routing logic
+Pointcloud/             : project root
+    \__init__.py         : contains routing logic
 
     init_db.py          : teardown and setup mock tables for testing
                         : also contains Models for peewee

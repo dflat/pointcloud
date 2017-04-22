@@ -2,11 +2,12 @@ import MySQLdb
 import peewee
 from peewee import *
 import random, time
+import db_config
 
-HOST = 'localhost'
-DATABASE = 'test'
-USER = 'root'
-PASS = 'cool2'
+HOST     = db_config.login['host']
+DATABASE = db_config.login['database']
+USER     = db_config.login['user']
+PASS     = db_config.login['password']
 
 db = peewee.MySQLDatabase(database=DATABASE, host=HOST, user=USER, passwd=PASS) 
 

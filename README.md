@@ -8,7 +8,7 @@ source flask.env
 
 -this will put app in debug mode
 
--edit db login credentials in *init_db.py*
+-edit db login credentials in `init\_db.py`
 
 
 ## to run ##
@@ -26,11 +26,11 @@ Pointcloud/             : project root
     flask.env           : sets environment variables for flask server
 
      static/
-        /js
+        js/
             three.js      : local copy of three.js library
             jsonpoints.js : main js code to query database
        
-         /css    
+        css/    
             main.css      : basic css stylesheet
    
      templates/

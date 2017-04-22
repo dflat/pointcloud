@@ -12,7 +12,7 @@ source flask.env
 
 
 ## to run ##
-flask run --host=0.0.0.0 --port=7000 
+`flask run --host=0.0.0.0 --port=7000` 
 
 ## directory map ##
 ```

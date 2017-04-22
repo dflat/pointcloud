@@ -3,6 +3,6 @@ login = {
     'host'     : 'localhost',
     'database' : 'test',
     'user'     : 'root',
-    'password' : 'cool2',
+    'password' : '',
 
 } 

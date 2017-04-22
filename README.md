@@ -8,7 +8,7 @@ source flask.env
 
 -this will put app in debug mode
 
--edit db login credentials in ```init_db.py```
+-edit db login credentials in ```db_config.py```
 
 
 ## to run ##
@@ -17,11 +17,11 @@ source flask.env
 ## directory map ##
 ```
 Pointcloud/             : project root
-    __init__.py         : contains routing logic
+    routes.py           : contains routing logic / Serves JSON api
 
     init_db.py          : teardown and setup mock tables for testing
                         : also contains Models for peewee
-
+    db_config.py        : db login configuration 
     requirements.txt    : dependencies for pip to install
     flask.env           : sets environment variables for flask server
 

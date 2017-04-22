@@ -1,6 +1,6 @@
 ## execute in shell to set up virtual environment with dependencies ##
 ```
-virtualenv --no-site-packages --distribute .env
+python3 -m venv .env
 source .env/bin/activate 
 pip install -r requirements.txt
 source flask.env

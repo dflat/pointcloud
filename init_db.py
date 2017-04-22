@@ -2,12 +2,15 @@ import MySQLdb
 import peewee
 from peewee import *
 import random, time
-import db_config
+if __name__ == '__main__':     # Have to import differently if using for initial seed
+    from db_config import login
+else:
+    from .db_config import login
 
-HOST     = db_config.login['host']
-DATABASE = db_config.login['database']
-USER     = db_config.login['user']
-PASS     = db_config.login['password']
+HOST     = login['host']
+DATABASE = login['database']
+USER     = login['user']
+PASS     = login['password']
 
 db = peewee.MySQLDatabase(database=DATABASE, host=HOST, user=USER, passwd=PASS) 
 

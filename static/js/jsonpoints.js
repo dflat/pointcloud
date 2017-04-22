@@ -51,6 +51,24 @@ function onDocumentMouseMove(event) {
   mouseY = event.clientY - windowHalfY;
 
 }
+/************** clickable functionality **************************************/
+//register mouse postion
+var POINT_THRESHOLD = 2;
+var raycaster = new THREE.Raycaster();
+raycaster.params.Points.threshold = POINT_THRESHOLD;
+var mouse = new THREE.Vector2();
+
+function onMouseMove( event ) {
+
+	// calculate mouse position in normalized device coordinates
+	// (-1 to +1) for both components
+
+	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+}
+
+window.addEventListener( 'mousemove', onMouseMove, false );
 
 /******** optional listeners for touch  **************************************/
 document.addEventListener('touchstart', onDocumentTouchStart, false);
@@ -101,7 +119,7 @@ function get_continuous_data(max_fetches) {
                 if (fetch_count < max_fetches) {
                     fetch_count += 1;
                     console.log(data)
-	                    if (data.length > 0) {
+	                    if (data['voxels'].length > 0) {
 	                    add_mesh(data);
 	                    //previous = data[data.length-1]['t'];
 	                    spec_id += 1
@@ -117,14 +135,15 @@ function get_continuous_data(max_fetches) {
 }
 
 /********************* Set color and add voxels to scene *********************************/
-function add_mesh(points){
+var spectra = []
+function add_mesh(data){
 	var geometry, material, mesh;
 	//construct geometry
 	geometry = new THREE.Geometry();
-	build_points(points[0], geometry); //points [0] -> all voxels for given spectrum
+	build_points(data['voxels'], geometry); //->send all voxels for current spectrum
 
 	var colored = new THREE.Color();
-	colored.setRGB(points[1], Math.random(), Math.random() )
+	colored.setRGB(data['spectrum']['reading'], Math.random(), Math.random() )
 
 	material = new THREE.PointsMaterial({ size: 2, color: colored,
 										  depthWrite:true, transparent: true });
@@ -133,6 +152,8 @@ function add_mesh(points){
 	
 	//add to scene
 	scene.add( mesh );
+	mesh.specrum_id = data['spectrum']['id'];
+	spectra.push(mesh)
 }
 // colors=[];
 
@@ -152,9 +173,26 @@ function build_points(points, geometry){
 }
 
 /************************* Main render loop ***********************************************/
+var touched;
+var intersects;
 function render() {
 	//main render loop
 	requestAnimationFrame( render );
+	//get mouse
+	raycaster.setFromCamera( mouse, camera );
+	
+
+	// calculate objects intersecting mouse/ray
+	intersects = raycaster.intersectObjects( scene.children );
+
+	for ( var i = 0; i < intersects.length; i++ ) {
+		touched = intersects[i].object
+		touched.material.color.setRGB(1,1,1); //= "#FFFFFF";
+		console.log('touched',touched.material, 'count ', i,'length',intersects.length)
+		
+				
+	}
+
 
 	//camera.position.x += (mouseX - camera.position.x) * 0.1;
   	//camera.position.y += (-mouseY - camera.position.y) * 0.1;

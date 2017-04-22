@@ -1,2 +1,1 @@
-git rm --cached db_config.py
 __pycache__/

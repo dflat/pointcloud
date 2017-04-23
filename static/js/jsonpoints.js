@@ -96,7 +96,7 @@ var API_ROOT = 'api/points?';
 var ASSET_ROOT = 'static/';
 var TEXTURE_DIR = 'Textures/';
 var LIMIT = 100; //batch size to grab from db each fetch
-var MAX_DB_FETCHES = 10;
+var MAX_DB_FETCHES = 100;
 var dragging = true;
 var texture;
 $( document ).ready(function() {
@@ -145,14 +145,14 @@ function add_mesh(data){
 	var colored = new THREE.Color();
 	colored.setRGB(data['spectrum']['reading'], Math.random(), Math.random() )
 
-	material = new THREE.PointsMaterial({ size: 2, color: colored,
-										  depthWrite:true, transparent: true });
+	material = new THREE.PointsMaterial({ size: 1, color: colored,
+										  depthWrite:false, transparent: false });
 	//create mesh
 	mesh = new THREE.Points( geometry, material );
 	
 	//add to scene
 	scene.add( mesh );
-	mesh.specrum_id = data['spectrum']['id'];
+	mesh.spectrum_id = data['spectrum']['id'];
 	spectra.push(mesh)
 }
 // colors=[];

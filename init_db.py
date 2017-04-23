@@ -1,7 +1,7 @@
 import MySQLdb
 import peewee
 from peewee import *
-import random, time
+import random, time, math
 if __name__ == '__main__':     # Have to import differently if using for initial seed
     from db_config import login
 else:
@@ -29,8 +29,44 @@ def populate_tables():
     db.create_tables([Scan, Spectrum, Voxel], safe=True)
 
     s = Seeder(Scan, n=2, groups=1)
-    s = Seeder(Spectrum, n=10, groups=2)
-    s = Seeder(Voxel, n=100, groups=10)
+    s = Seeder(Spectrum, n=100, groups=1) # before was n=10, groups=2
+    #s = Seeder(Voxel, n=100, groups=10)
+    make_graph(49, f)
+
+## experimental ##
+def f(x,y):
+    '''
+    surface equation'''
+    magnitude = math.sqrt(x**2 + y**2) # distance from origin
+    return math.sin( magnitude ) * 4 + ( magnitude / 2 )  # return z component
+
+def make_graph(n, func):
+    spectrum_id = 1
+    voxels = []
+    for x in range(-n,n+1):
+        for y in range(-n,n+1):
+            v = Voxel()
+            v.x = x
+            v.y = y
+            v.z = func(x,y)
+            v.time = time.time()
+            v.spectrum = spectrum_id
+            voxels.append(v)
+        spectrum_id += 1
+        seed(voxels)
+        voxels = []
+
+def seed(data):
+        """
+        commits to db in blocks of size ( self.n )
+        """
+        with db.atomic():
+            for voxel in data:
+                voxel.save()
+
+
+
+## end experimental ##
 
 class Seeder:
     """
@@ -85,7 +121,7 @@ class Spectrum(BaseModel):
 class Voxel(BaseModel):
     x = IntegerField()
     y = IntegerField()
-    z = IntegerField()
+    z = FloatField()#IntegerField()
     time = DoubleField()
     spectrum = ForeignKeyField(Spectrum, related_name='voxels')
 

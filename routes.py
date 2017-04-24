@@ -21,7 +21,7 @@ def sql_json():
 	spectrum = Spectrum.get(Spectrum.id == spectrum_id)
 	
 	# Get associated voxels
-	cursor = db.execute_sql(f'select x,y,z,time from voxel where spectrum_id = {spectrum_id};')
+	cursor = db.execute_sql(f'SELECT x,y,z,time FROM voxel WHERE spectrum_id = {spectrum_id};')
 	results = cursor.fetchall()
 
 	# Package data in clean dictionaries
@@ -38,7 +38,13 @@ def sql_json():
 	packed['spectrum'] = spectrum_data
 	# Send off 
 	return jsonify(packed)
-	
+
+@app.route('/api/spectrum')
+def get_first_spectrum():
+	db = init_db.db
+	scan_id = int(request.args.get('scan_id', 1))
+	cursor = db.execute_sql(f"SELECT id FROM spectrum WHERE scan_id = {scan_id} LIMIT 1;")
+	spectrum_start_id = 
 
 ############ alt query ################################
 #this sql query would ship redundant data over network, 

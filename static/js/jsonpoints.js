@@ -16,7 +16,7 @@ camera.position.z = orbit_radius; //old 1200
 scene = new THREE.Scene();
 
 var axisHelper = new THREE.AxisHelper( 75 );
-//scene.add( axisHelper );
+scene.add( axisHelper );
 
 //inital rotation for better viewing
 // scene.rotation.x = 1.75;
@@ -27,7 +27,7 @@ var axisHelper = new THREE.AxisHelper( 75 );
 scene.fog = new THREE.FogExp2(0x000000, 0.0017);
 
 //initial rotation
-scene.rotation.x = Math.PI / 2
+scene.rotation.x = -(Math.PI / 2)
 
 //init renderer
 renderer = new THREE.WebGLRenderer();
@@ -116,8 +116,8 @@ document.addEventListener('keyup', function(e)
         });
 
 /********************** mouse event listeners ******************************/
-document.addEventListener('mousedown', on_drag_start, false);
-document.addEventListener('mouseup', on_drag_end, false)
+// document.addEventListener('mousedown', on_drag_start, false);
+// document.addEventListener('mouseup', on_drag_end, false)
 function on_drag_start(event) {
 	event.preventDefault()
 	dragging = true;
@@ -137,7 +137,7 @@ function onDocumentMouseMove(event) {
   mouseY = event.clientY - windowHalfY;
 
 }
-/************** clickable functionality **************************************/
+/************** raycasting setup **************************************/
 //register mouse postion
 var POINT_THRESHOLD = 1;
 var raycaster = new THREE.Raycaster();
@@ -180,45 +180,101 @@ function onDocumentTouchMove(event) {
 
 /******************** main async loop hitting database ***********************/
 var API_ROOT = 'api/points?';
+var SPECTRUM_ROOT = 'api/spectrum?';
 var ASSET_ROOT = 'static/';
 var TEXTURE_DIR = 'Textures/';
-var LIMIT = 100; //batch size to grab from db each fetch
-var MAX_DB_FETCHES = 100;
+var LIMIT = 99; //batch size to grab from db each fetch
+var MAX_DB_FETCHES = 99; //IN PRODUCTION CHANGE THIS
 var dragging = false;
 var texture;
+var rendering = false;
+var render_lock = false;
+const POLLING_INTERVAL = 500 //milliseconds
+/* when document is ready, this is entry point */
 $( document ).ready(function() {
+	
 
-	get_continuous_data(MAX_DB_FETCHES);
+
+	register_scan_selector();
+	
 
 });
 
-function get_continuous_data(max_fetches) {
-    var fetch_count = 0;
-    var previous = 0
-  	var spec_id = 1
+
+function get_starting_spectrum_id(scan_id){
+
+        $.ajax({
+            url: SPECTRUM_ROOT + 'scan_id=' + scan_id, 
+            method: 'GET',
+            async: true,
+            success: function(spectrum_data) {
+            	console.log('spectrum id from api:', spectrum_data)
+            	starting_spectrum_id = spectrum_data['spectrum_start_id']
+            	spectrum_count = spectrum_data['spectrum_count']
+            	// if(scan_id == 0)
+            	// 	scan_id = spectrum_data['scan_id']
+            	get_continuous_data(MAX_DB_FETCHES, scan_id, spectrum_data)   
+            }
+        });
+}
+
+
+function get_continuous_data(max_fetches, scan_id, spectrum_data) {
+    var live_feed = false;
+    var fetch_success = 0;
+  	var spec_id = spectrum_data['spectrum_start_id']
+  	var spectrum_count = spectrum_data['spectrum_count']
+
+
+  	//var spec_id = start_spectrum_id;
+
+  	if (scan_id == 0) {
+  		live_feed = true
+  		scan_id = spectrum_data['scan_id']; // set scan id to latest scan
+  	} 
+  	else {
+  		max_fetches = spectrum_count; 
+  	} 
+  		
     function get_next_set() {
         $.ajax({
-            url: API_ROOT + 'spectrum_id=' + spec_id, //+ '&limit=' + LIMIT + '&prev=' + previous,
+            url: API_ROOT + 'spectrum_id=' + spec_id + '&scan_id=' + scan_id, 
             method: 'GET',
             async: true,
             success: function(data) {
-        		//or lose the _if_ to never stop checking db
-                if (fetch_count < max_fetches) {
-                    fetch_count += 1;
-                    //console.log(data)
+ 
+                if (live_feed || fetch_success < max_fetches) {
+                    //fetch_count += 1;
+                    //console.log('voxels:',data['voxels'].length, 'fetch count',fetch_count)
 	                    if (data['voxels'].length > 0) {
-	                    add_mesh(data);
-	                    //previous = data[data.length-1]['t'];
-	                    spec_id += 1
-	                    //console.log('previous :'+ previous);
-	                    
-	                    get_next_set();
+		                    add_mesh(data);
+		                    spec_id += 1
+		                    fetch_success += 1;
+	                   
+		                    if(!render_lock){  // If not signaled to terminate
+		                    	get_next_set();
+		                    }
+		                    else{ 
+		                    	console.log('returning')
+		                    	return
+		                    }
+	                	}
+	                	else{ 					// No new data to render
+	                		if(!render_lock){
+	                			setTimeout(get_next_set, POLLING_INTERVAL)
+	                			console.log('no data')
+	                		}
+	                		else 
+	                			return;
 	                	}
                 }
             }
         });
     }
+    //rendering = true
     get_next_set();
+    render_lock = false
+    //rendering = false
 }
 
 /********************* Set color and add voxels to scene *********************************/
@@ -242,7 +298,7 @@ function add_mesh(data){
 	
 	//add to scene
 	mesh.spectrum = data['spectrum']
-	console.log('spect_id',mesh.spectrum_id)
+	
 	scene.add( mesh );
 	
 
@@ -353,13 +409,7 @@ function render() {
 		camera.position.z += ZOOM_STEP
 		POLAR_BOUNDARY = orbit_radius - 1;
 	}
-	// 	orbit_radius -= RADIUS_STEP
-	// 	camera.position.z = orbit_radius;
-	// }
-	// if (up_pressed){
-	//  orbit_radius += RADIUS_STEP
-	//  camera.position.z = orbit_radius;
-	// }
+
 	
   	if (a_pressed) scene.rotation.z += Z_ROTATE_STEP
   	if (d_pressed) scene.rotation.z -= Z_ROTATE_STEP
@@ -373,4 +423,36 @@ function render() {
 	renderer.render( scene, camera );
 }
 render();
+
+/****************** scan selector functionality ********************************/
+function register_scan_selector(){
+
+	$("#scan-selector li").click(function() {
+    	var selected_scan_id = $(this).attr('data');
+    
+    	//sends signal current render to terminate
+    	render_lock = true
+    
+    	//defer clear and reload to ensure current render has been terminated
+    	//would be more robust to make this a callback instead of timeout deferred
+    	setTimeout(clear_and_reload.bind(null, selected_scan_id),(POLLING_INTERVAL + 100)); 	
+	
+	});
+
+}
+
+function clear_and_reload(selected_scan_id){
+	while(scene.children.length > 0){ 
+    	scene.remove(scene.children[0]); 
+    }
+    //after clear, begin loading newly selected scan
+    get_starting_spectrum_id(selected_scan_id);
+}
+
+
+
+
+
+
+
 

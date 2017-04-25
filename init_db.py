@@ -26,22 +26,31 @@ def populate_tables():
     """
     seeds tables with test data
     """
+    SCAN_RECORDS = 2
+    X_UPPER_BOUND = 49
+    VOXELS_PER_SPECTRUM = 99
+    SPECTRA_PER_SCAN = 99
+
     db.create_tables([Scan, Spectrum, Voxel], safe=True)
 
     s = Seeder(Scan, n=2, groups=1)
-    s = Seeder(Spectrum, n=100, groups=1) # before was n=10, groups=2
+    s = Seeder(Spectrum, n=SPECTRA_PER_SCAN, groups=2) # before was n=10, groups=2
     #s = Seeder(Voxel, n=100, groups=10)
-    make_graph(49, f)
+    make_graph(X_UPPER_BOUND, f, spectrum_id_start=1)
+    make_graph(X_UPPER_BOUND, g, spectrum_id_start=(SPECTRA_PER_SCAN + 1))
 
 ## experimental ##
 def f(x,y):
     '''
     surface equation'''
     magnitude = math.sqrt(x**2 + y**2) # distance from origin
-    return math.sin( magnitude ) * 4 + ( magnitude / 2 )  # return z component
+    return math.sin( magnitude ) * 4 - ( magnitude / 2 )  # return z component
+def g(x,y):
+    magnitude = math.sqrt(x**2 + y**2)
+    return math.cos(magnitude) 
 
-def make_graph(n, func):
-    spectrum_id = 1
+def make_graph(n, func, spectrum_id_start=1):
+    spectrum_id = spectrum_id_start
     voxels = []
     for x in range(-n,n+1):
         for y in range(-n,n+1):
@@ -60,9 +69,11 @@ def seed(data):
         """
         commits to db in blocks of size ( self.n )
         """
+        time.sleep( random.random() ) # TO TEST temporally random data production
         with db.atomic():
             for voxel in data:
                 voxel.save()
+                #Voxel.save(data) ??? execute in batches?
 
 
 

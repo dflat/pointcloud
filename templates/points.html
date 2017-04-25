@@ -13,11 +13,53 @@
 			
 		</script>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+		<script src="{{url_for('static', filename = 'js/bootstrap.min.js')}}"></script>
 		<script type="text/javascript" src ="http://threejs.org/build/three.min.js"></script>
 		<script type="text/javascript" 
 				src ="{{ url_for('static', filename = 'js/jsonpoints.js') }}"></script>
 		<div id="main-render">
-		</div>	
+		</div>
+
+		
+		<!-- <div class="btn-group">
+		  	<button type="button" 
+		  			class="btn btn-default dropdown-toggle" 
+		  			data-toggle="dropdown" 
+		  			aria-haspopup="true" 
+		  			aria-expanded="false">Scan<span class="caret"></span>
+		  	</button>
+		  	<ul id ="scan-selector" class="dropdown-menu">
+				
+			    {% for scan in scans %}
+			    	<a href = "#">
+						<li data = {{scan}}> {{scan}} </li> 
+					</a>
+				{% endfor %}
+			    
+		  	</ul>
+		</div> -->
+
+		<div class="dropdown">
+		    <button id="dLabel" type="button" 
+		  		  data-toggle="dropdown" 
+		  		  aria-haspopup="true" 
+		  		  aria-expanded="false">
+		    		Select Scan
+		    	<span class="caret"></span>
+		    </button>
+		    <ul id="scan-selector" class="dropdown-menu" aria-labelledby="dLabel">
+		    			<li data = 0 ><a href='#'>LIVE<span class="glyphicon glyphicon-facetime-video" 
+		    											   aria-hidden="true">
+		    										</span></a>
+		    			</li>
+		    	{% for scan in scans %}
+			    	
+						<li data ={{scan}}><a href='#'>{{scan}}</a> </li> 
+					
+				{% endfor %}
+		   </ul>
+		</div>
+		
 
 	</body>
 </html>

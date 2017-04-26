@@ -4,7 +4,7 @@ from db_config import ground_login
 from collections import namedtuple
 import threading
 from queue import Queue
-import time
+import time, random
 
 HOST     = air_login['host']
 DATABASE = air_login['database']
@@ -62,24 +62,39 @@ def drop_and_create():
 	''');
 
 
-def insert_many(spectrum_count, voxels_count):
+def insert_many(spectrum_count, voxels_count, scan_id):
+	ran = random.randint
 	for s in range(spectrum_count):	
-			inserted = RAMS.execute_sql('insert into spectrum ( time, exposure, signature, scan_id)\
-										 values (1,32,25,1);')
+
+			inserted = RAMS.execute_sql(f'insert into spectrum ( time, exposure, signature, scan_id)\
+										 values (1,{ran(1,20)},{ran(20,30)},{scan_id});')
 			s_id = inserted.lastrowid
+			print('inserted spectrum:', s_id)
+			time.sleep(2)
 			for i in range(voxels_count):
+				x = random.randint(-50,50)
+				y = random.randint(-50,50)
+				z = random.randint(-50,50)
 				RAMS.execute_sql(f'insert into voxel ( time, x,y,z,spectrum_id) values\
-									 (1,4,14,23,{s_id});')
-				time.sleep(.1)
+									 (0,{x},{y},{z},{s_id});')
+				time.sleep(0)
+
 def fill():
-	RAMS.execute_sql('insert into scan (start_time, white_bal) values (99,88);')
-	time.sleep(10)
-	insert_many(10,10)
+
+	inserted = RAMS.execute_sql('insert into scan (start_time, white_bal) values (99,88);')
+	scan_id = inserted.lastrowid
+	time.sleep(5)
+	insert_many(spectrum_count=20, voxels_count=100, scan_id=scan_id)
 
 
 def main():
+	print('dropping and rebuilding tables..')
 	drop_and_create()
+	print('tables clean..')
+	print('population with randomized data..')
 	fill()
+	print('finished.')
+
 
 
 

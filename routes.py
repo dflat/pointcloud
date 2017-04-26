@@ -40,7 +40,7 @@ def sql_json():
 	results = cursor.fetchall()
 
 	# Package data in clean dictionaries
-	fields = ('id','x','y','z','time')
+	fields = ('id','time', 'x','y','z')
 	voxel_data = [{field:value for field,value in zip(fields,result)} for result in results]
 
 	spectrum_fields = ('spectrum_id', 'reading')

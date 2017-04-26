@@ -3,7 +3,8 @@ from db_config import air_login
 from db_config import ground_login
 from collections import namedtuple
 import threading
-from queue import Queue
+#from queue import Queue
+import queue
 import time
 
 HOST     = air_login['host']
@@ -70,11 +71,15 @@ def Process(signature):
 
 ################ data flow for db transfer ################
 
-def get_latest_spectrum(scan_id):
-	rams_cursor = RAMS.execute_sql(f"SELECT * FROM spectrum WHERE scan_id = {scan_id}\
-									ORDER BY id DESC LIMIT 1;")
+def get_latest_spectrum(scan_id, last_seen):
+	if last_seen is None: 
+		rams_cursor = RAMS.execute_sql(f"SELECT * FROM spectrum WHERE scan_id = {scan_id}\
+									ORDER BY id ASC LIMIT 1;")
+	else:
+		rams_cursor = RAMS.execute_sql(f"SELECT * FROM spectrum WHERE scan_id = {scan_id}\
+										AND id = {last_seen+1} LIMIT 1;")
 	result = rams_cursor.fetchone()
-	print('get latest',result)
+	#print('get latest',result)
 	if result:
 		return Spectrum._make(result)
 	return None
@@ -83,21 +88,22 @@ def get_latest_spectrum(scan_id):
 def monitor(scan_id): #accepts scan_id from RAMS 
 	last_seen = None
 	while True:
-		latest = get_latest_spectrum(scan_id)
-		print('monitor..', scan_id, latest)
-		if latest and latest.id != last_seen:
+		latest = get_latest_spectrum(scan_id, last_seen) # check db for its latest spectrum entry
+		print(f'received {latest} from Scan {scan_id}..')
+		if latest and latest.id != last_seen: # if there is a record, and its new
 			last_seen = latest.id
-			spectrum_queue.put(latest) # When new spectrum, put in queue namedtuple of record
-		time.sleep(POLL_INTERVAL)  # Ideal polling time, 400ms?
+			spectrum_queue.put(latest) # Put the new spectrum on the queue
+		else:
+			time.sleep(POLL_INTERVAL) # nothing new, check back in 400ms..
 
 
 def commit_voxels_for(spectrum, ground_scan_id):
 	rams_cursor = RAMS.execute_sql(f'SELECT * FROM voxel WHERE spectrum_id = {spectrum.id};')
 	voxels = map( Voxel._make, rams_cursor.fetchall() )
-	print('inserting spectrum to GROUND.. with scan_id' , ground_scan_id)
+	
 	#######################################
 	## add processing here to get R G B  ##
-	#  with input: spectrum.signature     #
+	# 								      #
 	#	Process is a stub         		  #
 	#######################################
 	R,G,B = Process(spectrum.signature)
@@ -107,19 +113,26 @@ def commit_voxels_for(spectrum, ground_scan_id):
 						({spectrum.time}, {spectrum.signature}, {R},{G},{B}, {ground_scan_id});")
 
 	new_spec_id = inserted.lastrowid
-	print('inserting Voxels to GROUND..with spectrum id..', new_spec_id)
+	print(f'inserted Spectrum {new_spec_id} to GROUND with Scan {ground_scan_id}')
+	
 	with GROUND.atomic():
 		for v in voxels:
 			GROUND.execute_sql(f'INSERT INTO voxel (time, x, y, z, spectrum_id, scan_id)\
 								VALUES ({v.time},{v.x},{v.y},{v.z},{new_spec_id},{ground_scan_id});')
-		
+	print(f'inserted voxel-set to GROUND for Spectrum {new_spec_id}')	
 def consume_spectra(ground_scan_id):
 	finished_spectrum = None
 	while True:
 		if finished_spectrum == None:
 			finished_spectrum = spectrum_queue.get() # Dont progress til grab first spectrum
-		print('got first')
-		latest_spectrum = spectrum_queue.get() # block execution until grab second
+			print('queued first spectrum..')
+		try:
+			latest_spectrum = spectrum_queue.get(timeout=TIMEOUT) # block execution until grab second
+		except queue.Empty:
+			commit_voxels_for(finished_spectrum, ground_scan_id)
+			print('scan completed.')
+			break
+
 		print('calling commit..')
 		commit_voxels_for(finished_spectrum, ground_scan_id) # Antecedent spectrum
 
@@ -129,13 +142,19 @@ def consume_spectra(ground_scan_id):
 ####### end data flow for db transfer ############################
 
 POLL_INTERVAL = 0.4 # Seconds
-spectrum_queue = Queue()
+TIMEOUT = 10 # Seconds
+spectrum_queue = queue.Queue()
 
 # These are micro-classes to use as models instead of peewee models, way more efficient
 # they just map returned db records to field names and are part of standard library
 Scan = namedtuple('Scan', ['id','start_time','white_bal']) 
 Spectrum = namedtuple('Spectrum', ['id', 'time', 'exposure', 'signature','scan_id'])
 Voxel = namedtuple('Voxel', ['id','time','x','y','z','scan_id','spectrum_id'] )
+
+## starts by fetching latest spectrum in the db from the time this program starts
+## what if theres already been a few entered? well, they get sadly ignored..
+## problem: don't ignore the good folks! 
+## solution: start at the first record for the latest scan id, track last seen and +1
 
 def main():
 	while True:
@@ -144,26 +163,28 @@ def main():
 			latest_scan = Scan._make( rams_cursor.fetchone() ) # Turn into Scan object
 			break
 		except TypeError:
+			print(f'no scans found in RAMS db..')
 			time.sleep(.5)
-			print('no scans found in RAMS db..')
-
+			
+			
 	
-	### process scan here ####
-	### end process scan #####
+	### process scan white balance here ####
+	
 
 	# Put scan in ground db
-	print(latest_scan.white_bal)
+	#print(latest_scan.white_bal)
 	rams_scan_id = latest_scan.id
 
 	inserted = GROUND.execute_sql(f'INSERT INTO scan (start_time, white_bal)\
 									VALUES ( {latest_scan.start_time},"{latest_scan.white_bal}" );')
 	ground_scan_id = inserted.lastrowid
+	print(f'Transmitting Scan # {ground_scan_id}..')
 
 	t = threading.Thread(target=monitor, args=(rams_scan_id,))
 	t.daemon = True
 	t.start()
 
-	consume_spectra(ground_scan_id) # runs forever
+	consume_spectra(ground_scan_id) # Run forever (terminate on TIMEOUT)
 
 
 

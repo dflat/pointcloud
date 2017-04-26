@@ -35,7 +35,7 @@ def sql_json():
 	cursor = db.execute_sql(\
 	f'SELECT voxel.*, spectrum.scan_id FROM voxel\
 	LEFT JOIN spectrum ON voxel.spectrum_id = spectrum.id\
-	WHERE voxel.spectrum_id = {spectrum_id} AND scan_id = {scan_id};')
+	WHERE voxel.spectrum_id = {spectrum_id} AND spectrum.scan_id = {scan_id};')
 
 	results = cursor.fetchall()
 
@@ -44,7 +44,7 @@ def sql_json():
 	voxel_data = [{field:value for field,value in zip(fields,result)} for result in results]
 
 	spectrum_fields = ('spectrum_id', 'reading')
-	spectrum_values = (spectrum.id, spectrum.reading)
+	spectrum_values = (spectrum.id, spectrum.signature)
 	spectrum_data = dict(zip(spectrum_fields, spectrum_values))
 
 	# Package into json-ready dictionary

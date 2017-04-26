@@ -3,12 +3,12 @@ import peewee
 from peewee import *
 import random, time, math
 if __name__ == '__main__':     # Have to import differently if using for initial seed
-    from db_config import login
+    from db_config import login, ground_login
 else:
-    from .db_config import login
+    from .db_config import login, ground_login
 
 HOST     = login['host']
-DATABASE = login['database']
+DATABASE = ground_login['database'] # use ground db
 USER     = login['user']
 PASS     = login['password']
 
@@ -124,6 +124,32 @@ class BaseModel(Model):
     class Meta:
         database = db
 class Scan(BaseModel):
+    start_time = IntegerField()
+    white_bal = TextField()
+class Spectrum(BaseModel):
+    time = IntegerField()
+    signature = IntegerField()
+    red = IntegerField()
+    green = IntegerField()
+    blue = IntegerField()
+    scan = ForeignKeyField(Scan, related_name='spectra')
+class Voxel(BaseModel):
+    time = IntegerField()
+    x = IntegerField()
+    y = IntegerField()
+    z = IntegerField()
+    #scan = ForeignKeyField(Scan, related_name='voxels')
+    spectrum = ForeignKeyField(Spectrum, related_name='voxels')
+
+### Code to execute if run as main module ###############################################
+
+""" 
+old models for database 'test' to use with graphs (f, g) 
+
+class BaseModel(Model):
+    class Meta:
+        database = db
+class Scan(BaseModel):
     time = DoubleField()
 class Spectrum(BaseModel):
     reading = FloatField()
@@ -136,7 +162,7 @@ class Voxel(BaseModel):
     time = DoubleField()
     spectrum = ForeignKeyField(Spectrum, related_name='voxels')
 
-### Code to execute if run as main module ###############################################
+"""
 if __name__ == "__main__":
     db.connect()
     clean_slate()

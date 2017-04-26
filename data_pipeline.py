@@ -63,6 +63,11 @@ GROUND = peewee.MySQLDatabase(database=DATABASE, host=HOST, user=USER, passwd=PA
 # def get_rgb(decoded):
 # 		return color_parse(correct(preprocess(decoded)))
 
+def Process(signature):
+	print('proccessing..', signature)
+	r,g,b = 255,0,0
+	return r,g,b
+
 ################ data flow for db transfer ################
 
 def get_latest_spectrum(scan_id):
@@ -90,13 +95,16 @@ def commit_voxels_for(spectrum, ground_scan_id):
 	rams_cursor = RAMS.execute_sql(f'SELECT * FROM voxel WHERE spectrum_id = {spectrum.id};')
 	voxels = map( Voxel._make, rams_cursor.fetchall() )
 	print('inserting spectrum to GROUND.. with scan_id' , ground_scan_id)
-	###########################################
-	## add processing here to get R G B      ##
-	#  with input: spectrum.signature         #
-	## and inject into sql statement below   ##
-	###########################################
-	inserted = GROUND.execute_sql(f"INSERT INTO spectrum (time, signature, scan_id)\
-								VALUES ({spectrum.time}, {spectrum.signature}, {ground_scan_id});")
+	#######################################
+	## add processing here to get R G B  ##
+	#  with input: spectrum.signature     #
+	#	Process is a stub         		  #
+	#######################################
+	R,G,B = Process(spectrum.signature)
+
+	inserted = GROUND.execute_sql(f"INSERT INTO spectrum\
+									(time, signature, red, green, blue, scan_id) VALUES\
+						({spectrum.time}, {spectrum.signature}, {R},{G},{B}, {ground_scan_id});")
 
 	new_spec_id = inserted.lastrowid
 	print('inserting Voxels to GROUND..with spectrum id..', new_spec_id)
@@ -120,19 +128,25 @@ def consume_spectra(ground_scan_id):
 
 ####### end data flow for db transfer ############################
 
-POLL_INTERVAL = 0.4 # seconds
+POLL_INTERVAL = 0.4 # Seconds
 spectrum_queue = Queue()
 
-Scan = namedtuple('Scan', ['id','start_time','white_bal']) # Quickly defined micro-classes
+# These are micro-classes to use as models instead of peewee models, way more efficient
+# they just map returned db records to field names and are part of standard library
+Scan = namedtuple('Scan', ['id','start_time','white_bal']) 
 Spectrum = namedtuple('Spectrum', ['id', 'time', 'exposure', 'signature','scan_id'])
 Voxel = namedtuple('Voxel', ['id','time','x','y','z','scan_id','spectrum_id'] )
 
 def main():
+	while True:
+		try:
+			rams_cursor = RAMS.execute_sql("SELECT * FROM scan ORDER BY id DESC LIMIT 1;") # Latest scan
+			latest_scan = Scan._make( rams_cursor.fetchone() ) # Turn into Scan object
+			break
+		except TypeError:
+			time.sleep(.5)
+			print('no scans found in RAMS db..')
 
-	
-
-	rams_cursor = RAMS.execute_sql("SELECT * FROM scan ORDER BY id DESC LIMIT 1;") # Latest scan
-	latest_scan = Scan._make( rams_cursor.fetchone() ) # Turn into Scan object 
 	
 	### process scan here ####
 	### end process scan #####
@@ -141,7 +155,8 @@ def main():
 	print(latest_scan.white_bal)
 	rams_scan_id = latest_scan.id
 
-	inserted = GROUND.execute_sql(f'INSERT INTO scan (start_time, white_bal) VALUES ( {latest_scan.start_time},"{latest_scan.white_bal}" );')
+	inserted = GROUND.execute_sql(f'INSERT INTO scan (start_time, white_bal)\
+									VALUES ( {latest_scan.start_time},"{latest_scan.white_bal}" );')
 	ground_scan_id = inserted.lastrowid
 
 	t = threading.Thread(target=monitor, args=(rams_scan_id,))

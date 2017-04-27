@@ -415,6 +415,8 @@ function render() {
 		POLAR_BOUNDARY = orbit_radius - 1;
 	}
 
+	// if (w_pressed && Math.sin(scene.rotation.x) <= 0) scene.rotation.x += Z_ROTATE_STEP
+ //  	if (s_pressed && Math.sin(scene.rotation.x) <= 0) scene.rotation.x -= Z_ROTATE_STEP
 	
   	if (a_pressed) scene.rotation.z += Z_ROTATE_STEP
   	if (d_pressed) scene.rotation.z -= Z_ROTATE_STEP

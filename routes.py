@@ -47,7 +47,7 @@ def sql_json():
 
 	spectrum_fields = ('spectrum_id', 'reading', 'red','green','blue')
 	spectrum_values = (spectrum.id, spectrum.signature,spectrum.red,spectrum.green,spectrum.blue)
-	print(spectrum_values)
+	#print(spectrum_values)
 	spectrum_data = dict(zip(spectrum_fields, spectrum_values))
 
 	# Package into json-ready dictionary

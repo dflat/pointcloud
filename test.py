@@ -76,10 +76,9 @@ def insert_many(spectrum_count, voxels_count, scan_id):
 			s_id = inserted.lastrowid
 			print('inserted spectrum:', s_id)
 			time.sleep(2)
-			for i in range(voxels_count):
-				x = random.randint(-50,50)
-				y = random.randint(-50,50)
-				z = random.randint(-50,50)
+			for i,j,k in randomize(voxels_count):
+				x,y,z = i,j,k
+				
 				query = "insert into voxel( time, x, y,z,spectrum_id) values (%s,%s,%s,%s,%s);"
 				values = (0,x,y,z,s_id)
 				RAMS.execute_sql(query, values)
@@ -96,6 +95,14 @@ def fill():
 	time.sleep(5)
 	insert_many(spectrum_count=20, voxels_count=100, scan_id=scan_id)
 
+
+def randomize(n):
+	for i in range(n):
+		x = random.randint(-50,50)
+		y = random.randint(-50,50)
+		z = random.randint(-50,50)
+		yield x,y,z
+		
 
 def main():
 	print('dropping and rebuilding tables..')

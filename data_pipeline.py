@@ -3,9 +3,11 @@ from db_config import air_login
 from db_config import ground_login
 from collections import namedtuple
 import threading
-#from queue import Queue
 import queue
 import time
+import numpy
+import scipy.signal
+import scipy
 
 HOST     = air_login['host']
 DATABASE = air_login['database']
@@ -20,54 +22,51 @@ PASS     = ground_login['password']
 GROUND = peewee.MySQLDatabase(database=DATABASE, host=HOST, user=USER, passwd=PASS) 
 
 
-# def decode(a,b):
-# 	high = (a-128) << 7
-# 	low = (b-128)
-# 	return high + low
+def decode(a,b):
+	high = (a-128) << 7
+	low = (b-128)
+	return high + low
 
-# def preprocess(input):
-# 	output = medfilt( recovered, 5 ) # median filter
-# 	output = output - min(output)
-# 	output = output / max(output)	# normalized intensity from 0 to 1
-# 	return output
+def preprocess(data):
+	output = scipy.signal.medfilt( data, 5 ) 	# median filter
 
-# def colorParse(signature):
+	m = min(output)
+	output = numpy.array([(i - m) for i in output])
+	
+	mx = max(output)
+	output = numpy.array([(i / mx) for i in output]) # normalized intensity from 0 to 1
+	
+	return output
 
-# 	blue = sum( signature[219,315] )	# max  96
-# 	green = sum( signature[316,475] )		# 159 
-# 	red = sum( signature[580,849] )			# 269
+def color_parse(signature):
 
-# 	blue = 255 * blue / 96
-# 	green = 255 * green / 159
-# 	red = 255 * red / 269
+	# blue = sum( signature[219:315] )	# max  96
+	# green = sum( signature[316:475] )		# 159 
+	# red = sum( signature[580:849] )			# 269
 
-# 	return red, green, blue
+	# blue = 255 * blue / 96
+	# green = 255 * green / 159
+	# red = 255 * red / 269
+	red,green,blue = 255,0,0 #FOR TESTING delete this later
+	return red, green, blue
 
-# 	# start = 350
-# 	# end = 800
-# 	# vals = 950
+def find_bias(white_bal):
 
-# 	# blue = 450-495	
-# 		# og 248-344	
-# 		#    219-315	minus 29 for trim
-# 	# green= 495-570
-# 		# og 345-504
-# 		#    316-475
-# 	# red  = 620-750
-# 		# og 609-878
-# 		#	 580-849
+	white_bal = scipy.signal.medfilt(white_bal, 5)
+	median = scipy.median(white_bal)
+	white_bal = numpy.array([ (median-w)/w for w in white_bal ]) #  % deviation from median
 
-# def correct():
-
-
+	return white_bal
 
 # def get_rgb(decoded):
-# 		return color_parse(correct(preprocess(decoded)))
+# 	return color_parse(correct(preprocess(decoded)))
 
-def Process(signature):
-	print('proccessing..', signature)
-	r,g,b = 255,0,0
-	return r,g,b
+def Process(signature=None, white_bal=None):
+	signature = ( decode(signature[2*i], signature[2*i+1]) for i in range(29,980) )
+	signature = preprocess(signature)
+	signature = scipy.multiply(signature, white_bal)
+
+	return signature
 
 ################ data flow for db transfer ################
 
@@ -85,7 +84,7 @@ def get_latest_spectrum(scan_id, last_seen):
 	return None
 
 
-def monitor(scan_id): #accepts scan_id from RAMS 
+def monitor(scan_id): # data fetching daemon 
 	last_seen = None
 	while True:
 		latest = get_latest_spectrum(scan_id, last_seen) # check db for its latest spectrum entry
@@ -97,7 +96,7 @@ def monitor(scan_id): #accepts scan_id from RAMS
 			time.sleep(POLL_INTERVAL) # nothing new, check back in 400ms..
 
 
-def commit_voxels_for(spectrum, ground_scan_id):
+def commit_voxels_for(spectrum, ground_scan):
 	rams_cursor = RAMS.execute_sql(f'SELECT * FROM voxel WHERE spectrum_id = {spectrum.id};')
 	voxels = map( Voxel._make, rams_cursor.fetchall() )
 	
@@ -106,35 +105,40 @@ def commit_voxels_for(spectrum, ground_scan_id):
 	# 								      #
 	#	Process is a stub         		  #
 	#######################################
-	R,G,B = Process(spectrum.signature)
+	decoded_signature = 1 #Process(spectrum.signature, ground_scan.white_bal)
+	R,G,B = color_parse(decoded_signature)
 
-	inserted = GROUND.execute_sql(f"INSERT INTO spectrum\
-									(time, signature, red, green, blue, scan_id) VALUES\
-						({spectrum.time}, {spectrum.signature}, {R},{G},{B}, {ground_scan_id});")
+	query = "INSERT INTO spectrum (time, signature, red, green, blue, scan_id) values (%s,%s,%s,%s,%s,%s);"
+	values = (spectrum.time, spectrum.signature, R, G, B, ground_scan.id)
+
+	inserted = GROUND.execute_sql(query, values)
+	# inserted = GROUND.execute_sql(f"INSERT INTO spectrum\
+	# 								(time, signature, red, green, blue, scan_id) VALUES\
+	# 					({spectrum.time}, {spectrum.signature}, {R},{G},{B}, {ground_scan.id});")
 
 	new_spec_id = inserted.lastrowid
-	print(f'inserted Spectrum {new_spec_id} to GROUND with Scan {ground_scan_id}')
+	print(f'inserted Spectrum {new_spec_id} to GROUND with Scan {ground_scan.id}')
 	
 	with GROUND.atomic():
 		for v in voxels:
 			GROUND.execute_sql(f'INSERT INTO voxel (time, x, y, z, spectrum_id, scan_id)\
-								VALUES ({v.time},{v.x},{v.y},{v.z},{new_spec_id},{ground_scan_id});')
+								VALUES ({v.time},{v.x},{v.y},{v.z},{new_spec_id},{ground_scan.id});')
 	print(f'inserted voxel-set to GROUND for Spectrum {new_spec_id}')	
-def consume_spectra(ground_scan_id):
+def consume_spectra(ground_scan):
 	finished_spectrum = None
 	while True:
 		if finished_spectrum == None:
 			finished_spectrum = spectrum_queue.get() # Dont progress til grab first spectrum
-			print('queued first spectrum..')
+			print('processing first spectrum..')
 		try:
 			latest_spectrum = spectrum_queue.get(timeout=TIMEOUT) # block execution until grab second
 		except queue.Empty:
-			commit_voxels_for(finished_spectrum, ground_scan_id)
+			commit_voxels_for(finished_spectrum, ground_scan)
 			print('scan completed.')
 			break
 
 		print('calling commit..')
-		commit_voxels_for(finished_spectrum, ground_scan_id) # Antecedent spectrum
+		commit_voxels_for(finished_spectrum, ground_scan) # Antecedent spectrum
 
 		finished_spectrum = latest_spectrum
 
@@ -169,22 +173,37 @@ def main():
 			
 	
 	### process scan white balance here ####
-	
+	# w = latest_scan.white_bal
+	# recovered = ( decode(w[2*i], w[2*i+1]) for i in range(29,980) )
+	# latest_scan.white_bal = find_bias(recovered)
+	## finish process ##
 
+	## white_bal is an array now
+	## how should it be stored in ground_db?
+	## repr 
 	# Put scan in ground db
 	#print(latest_scan.white_bal)
 	rams_scan_id = latest_scan.id
 
-	inserted = GROUND.execute_sql(f'INSERT INTO scan (start_time, white_bal)\
-									VALUES ( {latest_scan.start_time},"{latest_scan.white_bal}" );')
+	query = "INSERT INTO scan (start_time, white_bal) values (%s, %s);"
+	values = (latest_scan.start_time, latest_scan.white_bal)
+
+	inserted = GROUND.execute_sql(query, values)
+	# inserted = GROUND.execute_sql(f'INSERT INTO scan (start_time, white_bal)\
+	# 								VALUES ( {latest_scan.start_time},"{latest_scan.white_bal}" );')
 	ground_scan_id = inserted.lastrowid
+
+	ground_scan = Scan(id=ground_scan_id, 
+						start_time=latest_scan.start_time, 
+						white_bal=latest_scan.white_bal)
+
 	print(f'Transmitting Scan # {ground_scan_id}..')
 
 	t = threading.Thread(target=monitor, args=(rams_scan_id,))
 	t.daemon = True
 	t.start()
 
-	consume_spectra(ground_scan_id) # Run forever (terminate on TIMEOUT)
+	consume_spectra(ground_scan) # Run forever (terminate on TIMEOUT)
 
 
 
@@ -192,6 +211,11 @@ def main():
 	# w = Scan.white_bal
 	# recovered_white_bal = [ decode(w[2*i], w[2*i+1]) 
 	# 						for i in range(29,980) ] # python iteration sugar
+
+	# w = latest_scan.white_bal
+	# recovered = ( decode(w[2*i], w[2*i+1]) for i in range(29,980) )
+	# latest_scan.white_bal = find_bias(recovered)
+
 
 	#rams_cursor = RAMS.execute_sql(f"SELECT * FROM spectum WHERE scan = {latest_scan.id};")
 

@@ -52,14 +52,14 @@ def drop_and_create():
 	''');
 	GROUND.execute_sql(\
 	'''
-	CREATE TABLE spectrum( id INT NOT NULL AUTO_INCREMENT, time INT, signature INT,
+	CREATE TABLE spectrum( id INT NOT NULL AUTO_INCREMENT, time INT, signature TEXT,
 	red INT, green INT, blue INT, scan_id INT, PRIMARY KEY(id),FOREIGN KEY (scan_id) REFERENCES scan(id) );
 	''')
 	GROUND.execute_sql(\
 	'''
 	CREATE TABLE voxel( id INT NOT NULL AUTO_INCREMENT, time INT, x SMALLINT, y SMALLINT, z SMALLINT,
 	scan_id INT, spectrum_id INT, PRIMARY KEY(id), FOREIGN KEY (spectrum_id) REFERENCES spectrum(id) );
-	''');
+	''')
 
 
 def insert_many(spectrum_count, voxels_count, scan_id):

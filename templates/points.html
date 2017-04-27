@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset=utf-8>
-		<title>Three.js Test</title>
+		<title>Pointcloud</title>
 		<link href="https://fonts.googleapis.com/css?family=Space+Mono:400" rel="stylesheet">
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 		<link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'css/main.css')}}">
@@ -14,30 +14,16 @@
 		</script>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
 		<script src="{{url_for('static', filename = 'js/bootstrap.min.js')}}"></script>
-		<script type="text/javascript" src ="http://threejs.org/build/three.min.js"></script>
+		<script src="{{url_for('static', filename = 'js/Chart.bundle.min.js')}}"></script>
+		<!--<script type="text/javascript" src ="http://threejs.org/build/three.min.js"></script>-->
+		<script type="text/javascript" src ="{{ url_for('static', filename = 'js/three.js') }}">
+		</script>
+		<script src="{{url_for('static', filename = 'js/spectrum.js')}}"></script>
 		<script type="text/javascript" 
 				src ="{{ url_for('static', filename = 'js/jsonpoints.js') }}"></script>
 		<div id="main-render">
 		</div>
 
-		
-		<!-- <div class="btn-group">
-		  	<button type="button" 
-		  			class="btn btn-default dropdown-toggle" 
-		  			data-toggle="dropdown" 
-		  			aria-haspopup="true" 
-		  			aria-expanded="false">Scan<span class="caret"></span>
-		  	</button>
-		  	<ul id ="scan-selector" class="dropdown-menu">
-				
-			    {% for scan in scans %}
-			    	<a href = "#">
-						<li data = {{scan}}> {{scan}} </li> 
-					</a>
-				{% endfor %}
-			    
-		  	</ul>
-		</div> -->
 
 		<div class="dropdown">
 		    <button id="dLabel" type="button" 
@@ -60,6 +46,9 @@
 		   </ul>
 		</div>
 		
+		<div id="chart-div">
+			<canvas id="spectrum-chart"></canvas>
+		</div>
 
 	</body>
 </html>

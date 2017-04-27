@@ -219,7 +219,7 @@ function get_starting_spectrum_id(scan_id){
 }
 
 
-function get_continuous_data(max_fetches, scan_id, spectrum_data) {
+function get_continuous_data(max_fetches, scan_id, spectrum_data, upon_termination=null) {
     var live_feed = false;
     var fetch_success = 0;
   	var spec_id = spectrum_data['spectrum_start_id']
@@ -430,7 +430,7 @@ function register_scan_selector(){
 	$("#scan-selector li").click(function() {
     	var selected_scan_id = $(this).attr('data');
     
-    	//sends signal current render to terminate
+    	//sends signal to current render to terminate
     	render_lock = true
     
     	//defer clear and reload to ensure current render has been terminated
@@ -448,6 +448,38 @@ function clear_and_reload(selected_scan_id){
     //after clear, begin loading newly selected scan
     get_starting_spectrum_id(selected_scan_id);
 }
+
+
+
+/***8 experimental ***/
+
+
+function clear_and_reload(selected_scan_id, call_when_terminated, new_scan_to_load){
+	while(scene.children.length > 0){ 
+    	scene.remove(scene.children[0]); 
+    }
+    //after clear, begin loading newly selected scan
+    get_starting_spectrum_id(selected_scan_id, call_when_terminated, new_scan_to_load);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

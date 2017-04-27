@@ -7,10 +7,10 @@ if __name__ == '__main__':     # Have to import differently if using for initial
 else:
     from .db_config import login, ground_login
 
-HOST     = login['host']
+HOST     = ground_login['host']
 DATABASE = ground_login['database'] # use ground db
-USER     = login['user']
-PASS     = login['password']
+USER     = ground_login['user']
+PASS     = ground_login['password']
 
 db = peewee.MySQLDatabase(database=DATABASE, host=HOST, user=USER, passwd=PASS) 
 

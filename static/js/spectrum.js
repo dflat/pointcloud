@@ -5,7 +5,7 @@ function get_labels(){
     var a = [];
     var start = 350;
     var interval = .47
-    for (var i = 350; i < (350+950); i++) {
+    for (var i = 350; i < (350+951); i++) {
         a.push(Math.floor(start));
         start+=interval;
     }
@@ -100,7 +100,7 @@ var GetChartData = function (touched) {
 };
 
 function updateSpectrumChart(touched){
-    console.log('spectrum signature:', touched.spectrum.reading);
+    //console.log('spectrum signature:', touched.spectrum.reading);
     the_chart.data.datasets[0].data = touched.spectrum.reading;
     the_chart.update();
 

@@ -341,7 +341,7 @@ const ROTATION_STEP = (Math.PI) / (60 * 2)//.01;
 var POLAR_BOUNDARY = orbit_radius - 1;
 const Z_ROTATE_STEP = (Math.PI) / (60 * 2)
 const RADIUS_STEP = (Math.PI) / 16 // ~ 0.1, was 0.1 originally
-const ZOOM_STEP = .2
+const ZOOM_STEP = .3
 
 function render() {
 	// orbit_radius -= .01

@@ -87,35 +87,20 @@ $( document ).ready(function() {
 
 });
 
-var GetChartData = function () {
+const SPECTRA_URI = 0;
+var GetChartData = function (touched) {
     $.ajax({
-        url: serviceUri,
+        url: SPECTRA_URL,
         method: 'GET',
         dataType: 'json',
-        success: function (d) {
-           chartData = {
-                labels: d.AxisLabels,
-                datasets: [
-                    {
-                        fillColor: "rgba(220,220,220,0.5)",
-                        strokeColor: "rgba(220,220,220,1)",
-                        pointColor: "rgba(220,220,220,1)",
-                        pointStrokeColor: "#fff",
-                        data: d.DataSets[0]
-                    }
-                ]
-            };
-
-            max = Math.max.apply(Math, d.DataSets[0]);
-            steps = 10;
-
-            respondCanvas();
+        success: function (data) {
+           updateSpectrumChart(touched)
         }
     });
 };
 
 function updateSpectrumChart(touched){
-    console.log('whats up', touched.spectrum.reading);
+    console.log('spectrum signature:', touched.spectrum.reading);
     the_chart.data.datasets[0].data = touched.spectrum.reading;
     the_chart.update();
 

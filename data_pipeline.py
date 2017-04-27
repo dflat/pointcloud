@@ -108,10 +108,13 @@ def commit_voxels_for(spectrum, ground_scan):
 	# 								      #
 	#	Process is a stub         		  #
 	#######################################
-	processed_signature = [1,2] # deco.Process(spectrum.signature, ground_scan.white_bal)
-	R,G,B = color_parse(processed_signature)
+	#print('sig length:', len(spectrum.signature))
+	processed_signature = deco.Process(spectrum.signature, ground_scan.white_bal)
+	processed_signature = list(processed_signature)
+	#print('processed_signature', processed_signature)
+	R,G,B = deco.color_parse(processed_signature)
 	print('R, G, B = ', R,G,B)
-	processed_signature = [i/950 for i in range(1,950)]
+	#processed_signature = [i/950 for i in range(1,950)]
 	processed_signature = json.dumps(processed_signature)
 	##############
 	#end processing
@@ -172,11 +175,13 @@ def main():
 			
 	
 	### process scan white balance here ####
-	# w = latest_scan.white_bal
-	# recovered = ( decode(w[2*i], w[2*i+1]) for i in range(29,980) )
+	decoded_white_bal = deco.find_bias(latest_scan.white_bal)
+	#print('HEREE', decoded_white_bal)
+	#latest_scan._replace(white_bal = decoded_white_bal )
+	# recovered = ( deco.decode(w[2*i], w[2*i+1]) for i in range(29,980) )
 	# latest_scan.white_bal = find_bias(recovered)
 	## finish process ##
-
+	#print('LATEST SCAN WHITE BAL', latest_scan.white_bal)
 	## white_bal is an array now
 	## how should it be stored in ground_db?
 	## repr 
@@ -194,7 +199,7 @@ def main():
 
 	ground_scan = Scan(id=ground_scan_id, 
 						start_time=latest_scan.start_time, 
-						white_bal=latest_scan.white_bal)
+						white_bal=decoded_white_bal)
 
 	print(f'Transmitting Scan # {ground_scan_id}..')
 

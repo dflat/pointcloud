@@ -27,12 +27,12 @@ def preprocess(data):
 	output = scipy.signal.medfilt( data, 5 ) 	# median filter
 
 	m = min(output)
-	mx = max(output)
+	#mx = max(output)
 	output = numpy.array([(i - m) for i in output])
 	
-	#mx = max(output)
+	mx = max(output)
 	output = numpy.array([(i / mx) for i in output]) # normalized intensity from 0 to 1
-	
+	print( 'preprocess returns',output[:8])
 	return output
 
 def color_parse(signature):
@@ -44,7 +44,7 @@ def color_parse(signature):
 	blue = 255 * blue / 96
 	green = 255 * green / 159
 	red = 255 * red / 269
-
+	
 	return red, green, blue
 
 def find_bias(white_bal):
@@ -52,8 +52,9 @@ def find_bias(white_bal):
 	white_bal = [ decode(white_bal[4*i], white_bal[4*i+1], white_bal[4*i+2], white_bal[4*i+3] ) for i in range(29,980) ]
 	white_bal = scipy.signal.medfilt(white_bal, 5)
 	median = scipy.median(white_bal)
-	white_bal = numpy.array([ (median-w)/w for w in white_bal ]) #  % deviation from median
+	white_bal = numpy.array([ ((median-w)/w) for w in white_bal ]) #  % deviation from median
 
+	print('white bal returns', white_bal[:8])
 	return white_bal
 
 def Process(signature, white_bal):
@@ -61,9 +62,10 @@ def Process(signature, white_bal):
 	#print(signature)
 	
 	signature = preprocess(signature)
-	signature = scipy.multiply(signature, white_bal)
-
+	#signature = scipy.multiply(signature, white_bal)
+	print('signature returns', signature[:8])
 	return signature
+
 
 def main():
 

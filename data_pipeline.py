@@ -9,7 +9,8 @@ import numpy
 import scipy.signal
 import scipy
 import random
-#import decoder_test
+import decoder_test as deco
+import json
 
 HOST     = air_login['host']
 DATABASE = air_login['database']
@@ -49,7 +50,7 @@ def color_parse(signature):
 	# blue = 255 * blue / 96
 	# green = 255 * green / 159
 	# red = 255 * red / 269
-	red, green, blue = random.random(),random.random(),random.random() #FOR TESTING delete this later
+	red, green, blue = random.randint(0,255),random.randint(0,255),random.randint(0,255) #FOR TESTING delete this later
 	return red, green, blue
 
 def find_bias(white_bal):
@@ -107,16 +108,18 @@ def commit_voxels_for(spectrum, ground_scan):
 	# 								      #
 	#	Process is a stub         		  #
 	#######################################
-	decoded_signature = 1 #Process(spectrum.signature, ground_scan.white_bal)
-	R,G,B = color_parse(decoded_signature)
+	processed_signature = [1,2] # deco.Process(spectrum.signature, ground_scan.white_bal)
+	R,G,B = color_parse(processed_signature)
+	print('R, G, B = ', R,G,B)
+	processed_signature = [i/950 for i in range(1,950)]
+	processed_signature = json.dumps(processed_signature)
+	##############
+	#end processing
+	###############
 
 	query = "INSERT INTO spectrum (time, signature, red, green, blue, scan_id) values (%s,%s,%s,%s,%s,%s);"
-	values = (spectrum.time, spectrum.signature, R, G, B, ground_scan.id)
-
+	values = (spectrum.time, processed_signature, R, G, B, ground_scan.id)
 	inserted = GROUND.execute_sql(query, values)
-	# inserted = GROUND.execute_sql(f"INSERT INTO spectrum\
-	# 								(time, signature, red, green, blue, scan_id) VALUES\
-	# 					({spectrum.time}, {spectrum.signature}, {R},{G},{B}, {ground_scan.id});")
 
 	new_spec_id = inserted.lastrowid
 	print(f'inserted Spectrum {new_spec_id} to GROUND with Scan {ground_scan.id}')
@@ -151,16 +154,10 @@ POLL_INTERVAL = 0.4 # Seconds
 TIMEOUT = 10 # Seconds
 spectrum_queue = queue.Queue()
 
-# These are micro-classes to use as models instead of peewee models, way more efficient
-# they just map returned db records to field names and are part of standard library
 Scan = namedtuple('Scan', ['id','start_time','white_bal']) 
 Spectrum = namedtuple('Spectrum', ['id', 'time', 'exposure', 'signature','scan_id'])
 Voxel = namedtuple('Voxel', ['id','time','x','y','z','scan_id','spectrum_id'] )
 
-## starts by fetching latest spectrum in the db from the time this program starts
-## what if theres already been a few entered? well, they get sadly ignored..
-## problem: don't ignore the good folks! 
-## solution: start at the first record for the latest scan id, track last seen and +1
 
 def main():
 	while True:

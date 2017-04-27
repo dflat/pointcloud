@@ -289,7 +289,8 @@ function add_mesh(data){
 	build_points(data['voxels'], geometry); //->send all voxels for current spectrum
 
 	var colored = new THREE.Color();
-	colored.setRGB(data['spectrum']['reading'], Math.random(), Math.random() )
+	//colored.setRGB(data['spectrum']['reading'], Math.random(), Math.random() )
+	colored.setRGB(data.spectrum.red/255, data.spectrum.green/255, data.spectrum.blue/255 )
 
 	material = new THREE.PointsMaterial({ size: POINT_SIZE, color: colored,
 										  depthWrite:false, transparent: false });
@@ -340,7 +341,7 @@ const ROTATION_STEP = (Math.PI) / (60 * 2)//.01;
 var POLAR_BOUNDARY = orbit_radius - 1;
 const Z_ROTATE_STEP = (Math.PI) / (60 * 2)
 const RADIUS_STEP = (Math.PI) / 16 // ~ 0.1, was 0.1 originally
-const ZOOM_STEP = .1
+const ZOOM_STEP = .2
 
 function render() {
 	// orbit_radius -= .01

@@ -63,7 +63,7 @@ $( document ).ready(function() {
                             ticks: {
 
                                     autoSkip: true,
-                                    maxTicksLimit: 10
+                                    maxTicksLimit: 6
                             },
                              scaleLabel: {
                                     display: true,

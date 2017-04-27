@@ -3,6 +3,7 @@ import peewee
 from . import init_db
 from .init_db import *
 import random, math
+import json
 
 app = Flask(__name__)
 
@@ -52,9 +53,11 @@ def sql_json():
 	# Package into json-ready dictionary
 	packed = { }
 	packed['voxels'] = voxel_data
-	spectrum_data['reading'] = [(i/980) - random.random() for i in range(29,980)]
+	# spectrum_data['reading'] = [(i/980) - random.random() for i in range(29,980)]
+	spectrum_data['reading'] = json.loads(spectrum_data['reading'])
 	packed['spectrum'] = spectrum_data
 	# Send off 
+
 	return jsonify(packed)
 
 @app.route('/api/spectrum')

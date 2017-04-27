@@ -128,7 +128,7 @@ class Scan(BaseModel):
     white_bal = TextField()
 class Spectrum(BaseModel):
     time = IntegerField()
-    signature = IntegerField()
+    signature = TextField()
     red = IntegerField()
     green = IntegerField()
     blue = IntegerField()

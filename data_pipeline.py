@@ -8,6 +8,8 @@ import time
 import numpy
 import scipy.signal
 import scipy
+import random
+#import decoder_test
 
 HOST     = air_login['host']
 DATABASE = air_login['database']
@@ -47,7 +49,7 @@ def color_parse(signature):
 	# blue = 255 * blue / 96
 	# green = 255 * green / 159
 	# red = 255 * red / 269
-	red,green,blue = 255,0,0 #FOR TESTING delete this later
+	red, green, blue = random.random(),random.random(),random.random() #FOR TESTING delete this later
 	return red, green, blue
 
 def find_bias(white_bal):

@@ -16,7 +16,7 @@ camera.position.z = orbit_radius; //old 1200
 scene = new THREE.Scene();
 
 var axisHelper = new THREE.AxisHelper( 75 );
-scene.add( axisHelper );
+//scene.add( axisHelper );
 
 //inital rotation for better viewing
 // scene.rotation.x = 1.75;
@@ -360,8 +360,11 @@ function render() {
 	  			touched = intersects[0].object
 	  			touched.original_color = touched.material.color.getHex()
 	  			touched.material.color.setRGB(1,1,1);
-
 	  			touched.material.size = SELECTED_POINT_SIZE;
+	  			/*** call chart.js to update ***/
+	  			updateSpectrumChart(touched);
+	  	
+	  			/*******************************/
 	  	
 	  		}
 	  		else { //touched is last touched spectrum
@@ -376,6 +379,7 @@ function render() {
 				//set new touched to white
 				touched.material.color.setRGB(1,1,1);
 				touched.material.size = SELECTED_POINT_SIZE;
+				updateSpectrumChart(touched);
 			}
 	
 		}

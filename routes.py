@@ -2,6 +2,7 @@ from flask import Flask, render_template, jsonify, url_for, request
 import peewee
 from . import init_db
 from .init_db import *
+import random, math
 
 app = Flask(__name__)
 
@@ -43,13 +44,15 @@ def sql_json():
 	fields = ('id','time', 'x','y','z')
 	voxel_data = [{field:value for field,value in zip(fields,result)} for result in results]
 
-	spectrum_fields = ('spectrum_id', 'reading')
-	spectrum_values = (spectrum.id, spectrum.signature)
+	spectrum_fields = ('spectrum_id', 'reading', 'red','green','blue')
+	spectrum_values = (spectrum.id, spectrum.signature,spectrum.red,spectrum.green,spectrum.blue)
+	print(spectrum_values)
 	spectrum_data = dict(zip(spectrum_fields, spectrum_values))
 
 	# Package into json-ready dictionary
 	packed = { }
 	packed['voxels'] = voxel_data
+	spectrum_data['reading'] = [(i/980) - random.random() for i in range(29,980)]
 	packed['spectrum'] = spectrum_data
 	# Send off 
 	return jsonify(packed)

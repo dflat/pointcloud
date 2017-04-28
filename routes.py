@@ -29,10 +29,7 @@ def sql_json():
 		spectrum = Spectrum.get(Spectrum.id == spectrum_id)
 	except Spectrum.DoesNotExist:
 		return jsonify({'voxels':[]})
-	
-	# Get associated voxels
-	#cursor = db.execute_sql(f'SELECT x,y,z,time FROM voxel WHERE spectrum_id = {spectrum_id};')
-	#results = cursor.fetchall()
+
 
 	cursor = db.execute_sql(\
 	f'SELECT voxel.*, spectrum.scan_id FROM voxel\
@@ -82,12 +79,3 @@ def get_first_spectrum():
 					'spectrum_count':spectrum_count,
 					'scan_id': scan_id })
 
-############ alt query ################################
-#this sql query would ship redundant data over network, 
-#but only one db call instead of two
-"""
-f'select x,y,z,voxel.time,spectrum.reading from voxel 
-left join spectrum on voxel.spectrum_id = spectrum.id 
-where voxel.spectrum_id = {spectrum_id};
-"""
-#######################################################

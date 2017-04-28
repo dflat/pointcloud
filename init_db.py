@@ -39,7 +39,6 @@ def populate_tables():
     make_graph(X_UPPER_BOUND, f, spectrum_id_start=1)
     make_graph(X_UPPER_BOUND, g, spectrum_id_start=(SPECTRA_PER_SCAN + 1))
 
-## experimental ##
 def f(x,y):
     '''
     surface equation'''
@@ -73,11 +72,6 @@ def seed(data):
         with db.atomic():
             for voxel in data:
                 voxel.save()
-                #Voxel.save(data) ??? execute in batches?
-
-
-
-## end experimental ##
 
 class Seeder:
     """
@@ -143,26 +137,6 @@ class Voxel(BaseModel):
 
 ### Code to execute if run as main module ###############################################
 
-""" 
-old models for database 'test' to use with graphs (f, g) 
-
-class BaseModel(Model):
-    class Meta:
-        database = db
-class Scan(BaseModel):
-    time = DoubleField()
-class Spectrum(BaseModel):
-    reading = FloatField()
-    time = DoubleField()
-    scan = ForeignKeyField(Scan, related_name='spectra')
-class Voxel(BaseModel):
-    x = IntegerField()
-    y = IntegerField()
-    z = FloatField()#IntegerField()
-    time = DoubleField()
-    spectrum = ForeignKeyField(Spectrum, related_name='voxels')
-
-"""
 if __name__ == "__main__":
     db.connect()
     clean_slate()
